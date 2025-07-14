@@ -351,8 +351,7 @@ parseSanitizeSkipHotCutoffArgs(const Driver &D, const llvm::opt::ArgList &Args,
 // Given a set of mismatched bits, TrapOnly (bits the user asked to trap but
 // that aren’t actually enabled), emit a warning based on -fsanitize-trap=NAME
 static void diagnoseTrapOnly(const Driver &D, SanitizerMask &TrapOnly) {
-// Double pass: one for sanitizer groupings, one for leaves (ex: undefined vs.
-// signed-integer-overflow)
+// One pass for sanitizer groupings
 #define SANITIZER(NAME, ID)
 #define SANITIZER_GROUP(NAME, ID, ALIAS)                                       \
   if (TrapOnly & SanitizerKind::ID##Group) {                                   \
@@ -363,6 +362,7 @@ static void diagnoseTrapOnly(const Driver &D, SanitizerMask &TrapOnly) {
 #include "clang/Basic/Sanitizers.def"
 
 #undef SANITIZER_GROUP
+// One pass for individual sanitizer names/leaves
 #define SANITIZER_GROUP(NAME, ID, ALIAS)
 #define SANITIZER(NAME, ID)                                                    \
   if (TrapOnly & SanitizerKind::ID) {                                          \
@@ -754,9 +754,14 @@ SanitizerArgs::SanitizerArgs(const ToolChain &TC,
       options::OPT_fno_sanitize_recover_EQ);
   RecoverableKinds &= Kinds;
 
+  // FIXME: `DiagnoseErrors` name seems a little wrong as we emit warnings here, 
+  // not errors but that seems to be done elsewhere in this method.
+
   // Parse any -fsanitize-trap=<...> flags the user provided, then
   // diagnose any which do not have a matching -fsanitize=<...>
   if (DiagnoseErrors) {
+    // parseSanitizeTrapArgs was not used because it sets a TrappingDefault 
+    // which causes the emission of warnings beyond what the user entered
     SanitizerMask ExplicitTrap = parseSanitizeArgs(
         D, Args, false, {}, {}, {}, options::OPT_fsanitize_trap_EQ,
         options::OPT_fno_sanitize_trap_EQ);
