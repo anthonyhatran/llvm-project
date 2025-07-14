@@ -876,7 +876,7 @@ def warn_drv_openacc_without_cir
       InGroup<SourceUsesOpenACC>;
 
 def warn_drv_sanitize_trap_mismatch : Warning<
-  "-fsanitize-trap=%0 has no effect because the matching sanitizer is not enabled; "
-  "did you mean to pass \"-fsanitize=%0\" as well?">,
+  "-fsanitize-trap=%0 has no effect because the \"%0\" sanitizer is disabled; "
+  "consider passing \"fsanitize=%0\" to enable the sanitizer">,
   InGroup<SanitizeTrapMismatch>;
 }
